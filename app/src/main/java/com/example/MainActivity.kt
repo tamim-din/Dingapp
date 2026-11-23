@@ -86,6 +86,7 @@ import com.example.data.QuranRepository
 import com.example.firebase.attemptAutoSignIn
 import com.example.firebase.authStateFlow
 import com.example.firebase.configureAppCheck
+import com.example.firebase.isFirebaseAvailable
 import com.example.firebase.signOutUser
 import com.example.model.UiState
 import com.example.ui.components.IslamicBackdrop
@@ -95,6 +96,7 @@ import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.KnowledgeAndCommunityScreen
 import com.example.ui.screens.MissionsAndPrayerScreen
 import com.example.ui.screens.NoorSplashScreen
+import com.example.ui.screens.NoorStandaloneShell
 import com.example.ui.screens.OnboardingScreen
 import com.example.ui.screens.QuranScreen
 import com.example.ui.screens.SafetyWellbeingAndSettingsScreen
@@ -117,7 +119,7 @@ private object NoorPrefKeys {
     val THEME_MODE = stringPreferencesKey("theme_mode")
 }
 
-private enum class NoorDestination(
+internal enum class NoorDestination(
     val routeId: String,
     val labelBn: String,
     val shortLabelBn: String,
@@ -167,11 +169,22 @@ private fun DcfbdNoorRoot() {
         activeThemeMode = localThemeMode
     }
 
-    val authUserFlow = remember { Firebase.auth.authStateFlow() }
-    val currentUser by authUserFlow.collectAsStateWithLifecycle(initialValue = Firebase.auth.currentUser)
+    val firebaseReady = remember { isFirebaseAvailable(context) }
 
-    LaunchedEffect(Unit) {
-        if (Firebase.auth.currentUser == null) {
+    val authUserFlow = remember(firebaseReady) {
+        if (firebaseReady) {
+            Firebase.auth.authStateFlow()
+        } else {
+            kotlinx.coroutines.flow.flowOf(null)
+        }
+    }
+    val initialUser = remember(firebaseReady) {
+        if (firebaseReady) Firebase.auth.currentUser else null
+    }
+    val currentUser by authUserFlow.collectAsStateWithLifecycle(initialValue = initialUser)
+
+    LaunchedEffect(firebaseReady) {
+        if (firebaseReady && Firebase.auth.currentUser == null) {
             attemptAutoSignIn(
                 context = context,
                 credentialManager = credentialManager,
@@ -194,6 +207,19 @@ private fun DcfbdNoorRoot() {
                         scope.launch {
                             context.noorDataStore.edit { prefs ->
                                 prefs[NoorPrefKeys.ONBOARDING_DONE] = true
+                            }
+                        }
+                    }
+                )
+            }
+            !firebaseReady -> {
+                NoorStandaloneShell(
+                    themeMode = activeThemeMode,
+                    onThemeChanged = { nextMode ->
+                        activeThemeMode = nextMode
+                        scope.launch {
+                            context.noorDataStore.edit { prefs ->
+                                prefs[NoorPrefKeys.THEME_MODE] = nextMode.name
                             }
                         }
                     }
@@ -541,7 +567,7 @@ private fun NoorAuthenticatedShell(
 }
 
 @Composable
-private fun NoorGlassTopHeader(
+internal fun NoorGlassTopHeader(
     currentTitle: String,
     themeMode: ThemeMode,
     isAdmin: Boolean,
@@ -636,7 +662,7 @@ private fun NoorGlassTopHeader(
 }
 
 @Composable
-private fun NoorGlassBottomBar(
+internal fun NoorGlassBottomBar(
     currentDestination: NoorDestination,
     onSelect: (NoorDestination) -> Unit
 ) {
@@ -685,7 +711,7 @@ private fun NoorGlassBottomBar(
 }
 
 @Composable
-private fun NoorGlassNavigationRail(
+internal fun NoorGlassNavigationRail(
     currentDestination: NoorDestination,
     onSelect: (NoorDestination) -> Unit
 ) {

@@ -82,4 +82,24 @@ class ExampleRobolectricTest {
         composeTestRule.waitForIdle()
         assertTrue(completed)
     }
+
+    @Test
+    fun `standalone shell renders cleanly without FirebaseApp crash`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        com.example.firebase.configureAppCheck(context, null)
+        composeTestRule.setContent {
+            DcfbdNoorTheme(themeMode = ThemeMode.NIGHT) {
+                com.example.ui.screens.NoorStandaloneShell(
+                    themeMode = ThemeMode.NIGHT,
+                    onThemeChanged = {}
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("DCFBD NOOR").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("nav_quran").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("nav_missions").performClick()
+        composeTestRule.waitForIdle()
+    }
 }
