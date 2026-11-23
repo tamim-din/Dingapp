@@ -1,0 +1,6 @@
+{
+  "name": "DCFBD NOOR",
+  "description": "একটি সুন্দর জীবনের পথে — ইসলামিক লাইফস্টাইল, কুরআন ও অডিও, নামাজ ট্র্যাকার, মিশন, তাসবিহ, AI সহকারী ও নিরাপদ ইন্টারনেট।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,517 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() &&
+             request.auth.token.email_verified == true &&
+             request.auth.token.email == 'tamimryl@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() ||
+             (isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.username is string && data.username.size() >= 2 && data.username.size() <= 40 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+             data.role in ['user', 'admin'] &&
+             data.themeMode in ['AUTO', 'DAY', 'NIGHT'] &&
+             data.xp is int && data.xp >= 0 &&
+             data.level is int && data.level >= 1 && data.level <= 100 &&
+             data.streakDays is int && data.streakDays >= 0 &&
+             data.activeDaysCount is int && data.activeDaysCount >= 0 &&
+             data.dailyQuranGoalPages is int && data.dailyQuranGoalPages >= 1 && data.dailyQuranGoalPages <= 100 &&
+             data.dailyTasbihGoal is int && data.dailyTasbihGoal >= 10 && data.dailyTasbihGoal <= 10000 &&
+             data.dailyScreenGoalMinutes is int && data.dailyScreenGoalMinutes >= 15 && data.dailyScreenGoalMinutes <= 720 &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             (!('country' in data) || (data.country is string && data.country.size() <= 60)) &&
+             (!('timezone' in data) || (data.timezone is string && data.timezone.size() <= 60)) &&
+             (!('locationName' in data) || (data.locationName is string && data.locationName.size() <= 80)) &&
+             (!('journalPinHash' in data) || (data.journalPinHash is string && data.journalPinHash.size() <= 128)) &&
+             (!('accountStatus' in data) || data.accountStatus in ['ACTIVE', 'SUSPENDED']) &&
+             (!('blockedUserIds' in data) || (data.blockedUserIds is list && data.blockedUserIds.size() <= 50 && (data.blockedUserIds.size() == 0 || data.blockedUserIds[0] is string)));
+    }
+
+    function isValidMission(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.category in ['IBADAT', 'CHARACTER', 'SELF_CONTROL', 'GOOD_DEEDS'] &&
+             data.schedule in ['DAILY', 'WEEKLY', 'MONTHLY'] &&
+             data.xpReward is int && data.xpReward >= 5 && data.xpReward <= 500 &&
+             data.custom is bool &&
+             data.completed is bool &&
+             data.completedCount is int && data.completedCount >= 0 &&
+             (!('lastCompletedDate' in data) || (data.lastCompletedDate is string && data.lastCompletedDate.size() <= 20));
+    }
+
+    function isValidMissionHistory(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.missionId is string && data.missionId.size() >= 1 && data.missionId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 40 &&
+             data.xpEarned is int && data.xpEarned >= 0 && data.xpEarned <= 500 &&
+             data.dateKey is string && data.dateKey.size() >= 4 && data.dateKey.size() <= 20;
+    }
+
+    function isValidPrayerLog(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.dateKey is string && data.dateKey.size() >= 8 && data.dateKey.size() <= 16 &&
+             data.fajr is bool &&
+             data.dhuhr is bool &&
+             data.asr is bool &&
+             data.maghrib is bool &&
+             data.isha is bool &&
+             data.tahajjud is bool &&
+             data.naflCount is int && data.naflCount >= 0 && data.naflCount <= 50 &&
+             (!('locationName' in data) || (data.locationName is string && data.locationName.size() <= 80));
+    }
+
+    function isValidQuranBookmark(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.surahNumber is int && data.surahNumber >= 1 && data.surahNumber <= 114 &&
+             data.surahNameBn is string && data.surahNameBn.size() >= 1 && data.surahNameBn.size() <= 80 &&
+             data.ayahNumber is int && data.ayahNumber >= 1 && data.ayahNumber <= 286 &&
+             data.paraNumber is int && data.paraNumber >= 1 && data.paraNumber <= 30 &&
+             data.arabicText is string && data.arabicText.size() >= 1 && data.arabicText.size() <= 3000 &&
+             data.banglaText is string && data.banglaText.size() >= 1 && data.banglaText.size() <= 3000 &&
+             data.favorite is bool &&
+             (!('note' in data) || (data.note is string && data.note.size() <= 500));
+    }
+
+    function isValidQuranProgress(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.lastSurahNumber is int && data.lastSurahNumber >= 1 && data.lastSurahNumber <= 114 &&
+             data.lastSurahNameBn is string && data.lastSurahNameBn.size() >= 1 && data.lastSurahNameBn.size() <= 80 &&
+             data.lastAyahNumber is int && data.lastAyahNumber >= 1 && data.lastAyahNumber <= 286 &&
+             data.lastParaNumber is int && data.lastParaNumber >= 1 && data.lastParaNumber <= 30 &&
+             data.lastAudioQariId is string && data.lastAudioQariId.size() >= 1 && data.lastAudioQariId.size() <= 60 &&
+             data.totalAyahsRead is int && data.totalAyahsRead >= 0 &&
+             data.dailyAyahsRead is int && data.dailyAyahsRead >= 0 &&
+             data.dailyGoalAyahs is int && data.dailyGoalAyahs >= 1 && data.dailyGoalAyahs <= 500 &&
+             (!('lastReadDateKey' in data) || (data.lastReadDateKey is string && data.lastReadDateKey.size() <= 20));
+    }
+
+    function isValidAiConversation(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.lastMessagePreview is string && data.lastMessagePreview.size() <= 300 &&
+             data.messageCount is int && data.messageCount >= 0;
+    }
+
+    function isValidAiMessage(data, conversationId) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.conversationId == conversationId &&
+             data.role in ['USER', 'ASSISTANT'] &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 8000;
+    }
+
+    function isValidPrivateJournal(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 5000 &&
+             data.dateKey is string && data.dateKey.size() >= 4 && data.dateKey.size() <= 20 &&
+             (!('gratitudeNote' in data) || (data.gratitudeNote is string && data.gratitudeNote.size() <= 1000)) &&
+             (!('habitReflection' in data) || (data.habitReflection is string && data.habitReflection.size() <= 1000)) &&
+             (!('moodTag' in data) || (data.moodTag is string && data.moodTag.size() <= 40));
+    }
+
+    function isValidTasbihLog(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.dhikrTitle is string && data.dhikrTitle.size() >= 1 && data.dhikrTitle.size() <= 120 &&
+             data.count is int && data.count >= 0 &&
+             data.targetCount is int && data.targetCount >= 1 && data.targetCount <= 10000 &&
+             data.dateKey is string && data.dateKey.size() >= 4 && data.dateKey.size() <= 20 &&
+             (!('arabicText' in data) || (data.arabicText is string && data.arabicText.size() <= 300));
+    }
+
+    function isValidNotification(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.body is string && data.body.size() >= 1 && data.body.size() <= 500 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 40 &&
+             data.read is bool;
+    }
+
+    function isValidCommunityPost(data) {
+      return data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 &&
+             data.authorAlias is string && data.authorAlias.size() >= 1 && data.authorAlias.size() <= 50 &&
+             data.category in ['MOTIVATION', 'GOOD_DEED', 'REFLECTION'] &&
+             data.content is string && data.content.size() >= 3 && data.content.size() <= 1000 &&
+             data.likesCount is int && data.likesCount >= 0 &&
+             data.reportedCount is int && data.reportedCount >= 0 &&
+             data.moderatedHidden is bool;
+    }
+
+    function isValidCommunityReport(data) {
+      return data.reporterId is string && data.reporterId.size() >= 1 && data.reporterId.size() <= 128 &&
+             data.postId is string && data.postId.size() >= 1 && data.postId.size() <= 128 &&
+             data.reason is string && data.reason.size() >= 3 && data.reason.size() <= 300 &&
+             data.status in ['OPEN', 'RESOLVED', 'DISMISSED'];
+    }
+
+    function isValidQuizResult(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.quizTitle is string && data.quizTitle.size() >= 1 && data.quizTitle.size() <= 120 &&
+             data.score is int && data.score >= 0 &&
+             data.totalQuestions is int && data.totalQuestions >= 1 && data.totalQuestions <= 50 &&
+             data.xpEarned is int && data.xpEarned >= 0 && data.xpEarned <= 500 &&
+             data.dateKey is string && data.dateKey.size() >= 4 && data.dateKey.size() <= 20;
+    }
+
+    function isValidCuratedItem(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             data.body is string && data.body.size() >= 1 && data.body.size() <= 5000 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+             data.active is bool &&
+             (!('reference' in data) || (data.reference is string && data.reference.size() <= 200)) &&
+             (!('extra' in data) || (data.extra is string && data.extra.size() <= 2000));
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().role == 'user' &&
+                       (!('accountStatus' in incoming()) || incoming().accountStatus == 'ACTIVE') &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'username', 'email', 'role', 'themeMode', 'xp', 'level', 'streakDays', 'activeDaysCount', 'dailyQuranGoalPages', 'dailyTasbihGoal', 'dailyScreenGoalMinutes', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'username', 'email', 'photoUrl', 'country', 'timezone', 'locationName', 'themeMode', 'role', 'accountStatus', 'xp', 'level', 'streakDays', 'activeDaysCount', 'dailyQuranGoalPages', 'dailyTasbihGoal', 'dailyScreenGoalMinutes', 'journalPinHash', 'blockedUserIds', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() && isValidId(userId) && isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time && (
+                         (isOwner(userId) &&
+                           incoming().role == existing().role &&
+                           incoming().email == existing().email &&
+                           (!('accountStatus' in existing()) || incoming().accountStatus == existing().accountStatus) &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'username', 'photoUrl', 'country', 'timezone', 'locationName', 'themeMode', 'xp', 'level', 'streakDays', 'activeDaysCount', 'dailyQuranGoalPages', 'dailyTasbihGoal', 'dailyScreenGoalMinutes', 'journalPinHash', 'blockedUserIds', 'updatedAt'])) ||
+                         (isAdmin() &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['accountStatus', 'role', 'updatedAt']))
+                       );
+
+      allow delete: if isOwner(userId) || isAdmin();
+
+      match /missions/{missionId} {
+        allow get: if isOwner(userId) && isValidId(missionId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(missionId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'category', 'schedule', 'xpReward', 'custom', 'completed', 'completedCount', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'category', 'schedule', 'xpReward', 'custom', 'completed', 'completedCount', 'lastCompletedDate', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidMission(incoming());
+        allow update: if isOwner(userId) && isValidId(missionId) &&
+                         isValidMission(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'category', 'schedule', 'xpReward', 'completed', 'completedCount', 'lastCompletedDate', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(missionId);
+      }
+
+      match /mission_history/{historyId} {
+        allow get: if isOwner(userId) && isValidId(historyId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(historyId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'missionId', 'title', 'category', 'xpEarned', 'dateKey', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'missionId', 'title', 'category', 'xpEarned', 'dateKey', 'createdAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         isValidMissionHistory(incoming());
+        allow delete: if isOwner(userId) && isValidId(historyId);
+      }
+
+      match /prayer_logs/{dateKey} {
+        allow get: if isOwner(userId) && isValidId(dateKey);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(dateKey) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().dateKey == dateKey &&
+                         incoming().keys().hasAll(['userId', 'dateKey', 'fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'tahajjud', 'naflCount', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'dateKey', 'fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'tahajjud', 'naflCount', 'locationName', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidPrayerLog(incoming());
+        allow update: if isOwner(userId) && isValidId(dateKey) &&
+                         isValidPrayerLog(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().dateKey == existing().dateKey &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'tahajjud', 'naflCount', 'locationName', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(dateKey);
+      }
+
+      match /quran_bookmarks/{bookmarkId} {
+        allow get: if isOwner(userId) && isValidId(bookmarkId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(bookmarkId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'surahNumber', 'surahNameBn', 'ayahNumber', 'paraNumber', 'arabicText', 'banglaText', 'favorite', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'surahNumber', 'surahNameBn', 'ayahNumber', 'paraNumber', 'arabicText', 'banglaText', 'note', 'favorite', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidQuranBookmark(incoming());
+        allow update: if isOwner(userId) && isValidId(bookmarkId) &&
+                         isValidQuranBookmark(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['note', 'favorite', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(bookmarkId);
+      }
+
+      match /quran_progress/{docId} {
+        allow get: if isOwner(userId) && isValidId(docId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(docId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'lastSurahNumber', 'lastSurahNameBn', 'lastAyahNumber', 'lastParaNumber', 'lastAudioQariId', 'totalAyahsRead', 'dailyAyahsRead', 'dailyGoalAyahs', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'lastSurahNumber', 'lastSurahNameBn', 'lastAyahNumber', 'lastParaNumber', 'lastAudioQariId', 'totalAyahsRead', 'dailyAyahsRead', 'dailyGoalAyahs', 'lastReadDateKey', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidQuranProgress(incoming());
+        allow update: if isOwner(userId) && isValidId(docId) &&
+                         isValidQuranProgress(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['lastSurahNumber', 'lastSurahNameBn', 'lastAyahNumber', 'lastParaNumber', 'lastAudioQariId', 'totalAyahsRead', 'dailyAyahsRead', 'dailyGoalAyahs', 'lastReadDateKey', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(docId);
+      }
+
+      match /ai_conversations/{conversationId} {
+        allow get: if isOwner(userId) && isValidId(conversationId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(conversationId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'lastMessagePreview', 'messageCount', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'lastMessagePreview', 'messageCount', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidAiConversation(incoming());
+        allow update: if isOwner(userId) && isValidId(conversationId) &&
+                         isValidAiConversation(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'lastMessagePreview', 'messageCount', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(conversationId);
+
+        match /messages/{messageId} {
+          allow get: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+          allow list: if isOwner(userId) && isValidId(conversationId);
+          allow create: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId) &&
+                           incoming().userId == request.auth.uid &&
+                           incoming().keys().hasAll(['userId', 'conversationId', 'role', 'content', 'createdAt']) &&
+                           incoming().keys().hasOnly(['userId', 'conversationId', 'role', 'content', 'createdAt']) &&
+                           incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                           isValidAiMessage(incoming(), conversationId);
+          allow delete: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+        }
+      }
+
+      match /private_journals/{journalId} {
+        allow get: if isOwner(userId) && isValidId(journalId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(journalId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'content', 'dateKey', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'content', 'gratitudeNote', 'habitReflection', 'moodTag', 'dateKey', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidPrivateJournal(incoming());
+        allow update: if isOwner(userId) && isValidId(journalId) &&
+                         isValidPrivateJournal(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'gratitudeNote', 'habitReflection', 'moodTag', 'dateKey', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(journalId);
+      }
+
+      match /tasbih_logs/{logId} {
+        allow get: if isOwner(userId) && isValidId(logId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(logId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'dhikrTitle', 'count', 'targetCount', 'dateKey', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'dhikrTitle', 'arabicText', 'count', 'targetCount', 'dateKey', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidTasbihLog(incoming());
+        allow update: if isOwner(userId) && isValidId(logId) &&
+                         isValidTasbihLog(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['dhikrTitle', 'arabicText', 'count', 'targetCount', 'dateKey', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(logId);
+      }
+
+      match /notifications/{notificationId} {
+        allow get: if isOwner(userId) && isValidId(notificationId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(notificationId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'body', 'category', 'read', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'body', 'category', 'read', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidNotification(incoming());
+        allow update: if isOwner(userId) && isValidId(notificationId) &&
+                         isValidNotification(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['read', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(notificationId);
+      }
+    }
+
+    match /community_posts/{postId} {
+      allow get: if isSignedIn() && isValidId(postId) && (existing().moderatedHidden == false || existing().authorId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().moderatedHidden == false || existing().authorId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(postId) &&
+                       incoming().authorId == request.auth.uid &&
+                       incoming().moderatedHidden == false &&
+                       incoming().likesCount == 0 &&
+                       incoming().reportedCount == 0 &&
+                       incoming().keys().hasAll(['authorId', 'authorAlias', 'category', 'content', 'likesCount', 'reportedCount', 'moderatedHidden', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['authorId', 'authorAlias', 'category', 'content', 'likesCount', 'reportedCount', 'moderatedHidden', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       isValidCommunityPost(incoming());
+      allow update: if isSignedIn() && isValidId(postId) && isValidCommunityPost(incoming()) &&
+                       incoming().authorId == existing().authorId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time && (
+                         (existing().authorId == request.auth.uid &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['authorAlias', 'category', 'content', 'updatedAt'])) ||
+                         (incoming().likesCount == existing().likesCount + 1 &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'updatedAt'])) ||
+                         (incoming().reportedCount == existing().reportedCount + 1 &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['reportedCount', 'updatedAt'])) ||
+                         (isAdmin() &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['moderatedHidden', 'updatedAt']))
+                       );
+      allow delete: if isSignedIn() && isValidId(postId) && (existing().authorId == request.auth.uid || isAdmin());
+    }
+
+    match /community_reports/{reportId} {
+      allow get: if isSignedIn() && isValidId(reportId) && (existing().reporterId == request.auth.uid || isAdmin());
+      allow list: if isAdmin() || (isSignedIn() && existing().reporterId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(reportId) &&
+                       incoming().reporterId == request.auth.uid &&
+                       incoming().status == 'OPEN' &&
+                       incoming().keys().hasAll(['reporterId', 'postId', 'reason', 'status', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['reporterId', 'postId', 'reason', 'status', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       isValidCommunityReport(incoming()) &&
+                       exists(/databases/$(database)/documents/community_posts/$(incoming().postId));
+      allow update: if isAdmin() && isValidId(reportId) &&
+                       isValidCommunityReport(incoming()) &&
+                       incoming().reporterId == existing().reporterId &&
+                       incoming().postId == existing().postId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(reportId);
+    }
+
+    match /quiz_results/{resultId} {
+      allow get: if isSignedIn() && isValidId(resultId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(resultId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'quizTitle', 'score', 'totalQuestions', 'xpEarned', 'dateKey', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'quizTitle', 'score', 'totalQuestions', 'xpEarned', 'dateKey', 'createdAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       isValidQuizResult(incoming());
+      allow delete: if isSignedIn() && isValidId(resultId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    match /admins/{adminUid} {
+      allow get: if isSignedIn() && isValidId(adminUid) && (request.auth.uid == adminUid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin() && isValidId(adminUid);
+    }
+
+    match /mission_templates/{templateId} {
+      allow get: if isSignedIn() && isValidId(templateId);
+      allow list: if isSignedIn();
+      allow create, update: if isAdmin() && isValidId(templateId) && isValidCuratedItem(incoming()) &&
+                               incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+      allow delete: if isAdmin() && isValidId(templateId);
+    }
+
+    match /curated_hadiths/{hadithId} {
+      allow get: if isSignedIn() && isValidId(hadithId);
+      allow list: if isSignedIn();
+      allow create, update: if isAdmin() && isValidId(hadithId) && isValidCuratedItem(incoming()) &&
+                               incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+      allow delete: if isAdmin() && isValidId(hadithId);
+    }
+
+    match /curated_motivation/{itemId} {
+      allow get: if isSignedIn() && isValidId(itemId);
+      allow list: if isSignedIn();
+      allow create, update: if isAdmin() && isValidId(itemId) && isValidCuratedItem(incoming()) &&
+                               incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+      allow delete: if isAdmin() && isValidId(itemId);
+    }
+
+    match /quizzes/{quizId} {
+      allow get: if isSignedIn() && isValidId(quizId);
+      allow list: if isSignedIn();
+      allow create, update: if isAdmin() && isValidId(quizId) && isValidCuratedItem(incoming()) &&
+                               incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+      allow delete: if isAdmin() && isValidId(quizId);
+    }
+
+    match /app_config/{configId} {
+      allow get: if isSignedIn() && isValidId(configId);
+      allow list: if isSignedIn();
+      allow create, update: if isAdmin() && isValidId(configId) && isValidCuratedItem(incoming()) &&
+                               incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+      allow delete: if isAdmin() && isValidId(configId);
+    }
+  }
+}

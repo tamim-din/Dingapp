@@ -1,0 +1,296 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile, preferences, XP, level, and privacy settings",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "country": { "type": "string" },
+        "timezone": { "type": "string" },
+        "locationName": { "type": "string" },
+        "themeMode": { "type": "string", "enum": ["AUTO", "DAY", "NIGHT"] },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "accountStatus": { "type": "string", "enum": ["ACTIVE", "SUSPENDED"] },
+        "xp": { "type": "integer" },
+        "level": { "type": "integer" },
+        "streakDays": { "type": "integer" },
+        "activeDaysCount": { "type": "integer" },
+        "dailyQuranGoalPages": { "type": "integer" },
+        "dailyTasbihGoal": { "type": "integer" },
+        "dailyScreenGoalMinutes": { "type": "integer" },
+        "journalPinHash": { "type": "string" },
+        "blockedUserIds": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "username", "email", "role", "themeMode", "xp", "level", "streakDays", "activeDaysCount", "dailyQuranGoalPages", "dailyTasbihGoal", "dailyScreenGoalMinutes", "createdAt", "updatedAt"]
+    },
+    "UserMission": {
+      "title": "UserMission",
+      "description": "User Islamic habit mission item",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string", "enum": ["IBADAT", "CHARACTER", "SELF_CONTROL", "GOOD_DEEDS"] },
+        "schedule": { "type": "string", "enum": ["DAILY", "WEEKLY", "MONTHLY"] },
+        "xpReward": { "type": "integer" },
+        "custom": { "type": "boolean" },
+        "completed": { "type": "boolean" },
+        "completedCount": { "type": "integer" },
+        "lastCompletedDate": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "category", "schedule", "xpReward", "custom", "completed", "completedCount", "createdAt", "updatedAt"]
+    },
+    "MissionHistory": {
+      "title": "MissionHistory",
+      "description": "Historical completion log of missions",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "missionId": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "xpEarned": { "type": "integer" },
+        "dateKey": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "missionId", "title", "category", "xpEarned", "dateKey", "createdAt"]
+    },
+    "PrayerLog": {
+      "title": "PrayerLog",
+      "description": "Daily five-times prayer and nafl log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "dateKey": { "type": "string" },
+        "fajr": { "type": "boolean" },
+        "dhuhr": { "type": "boolean" },
+        "asr": { "type": "boolean" },
+        "maghrib": { "type": "boolean" },
+        "isha": { "type": "boolean" },
+        "tahajjud": { "type": "boolean" },
+        "naflCount": { "type": "integer" },
+        "locationName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "dateKey", "fajr", "dhuhr", "asr", "maghrib", "isha", "tahajjud", "naflCount", "createdAt", "updatedAt"]
+    },
+    "QuranBookmark": {
+      "title": "QuranBookmark",
+      "description": "User bookmarked or favorite Quran ayah",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "surahNumber": { "type": "integer" },
+        "surahNameBn": { "type": "string" },
+        "ayahNumber": { "type": "integer" },
+        "paraNumber": { "type": "integer" },
+        "arabicText": { "type": "string" },
+        "banglaText": { "type": "string" },
+        "note": { "type": "string" },
+        "favorite": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "surahNumber", "surahNameBn", "ayahNumber", "paraNumber", "arabicText", "banglaText", "favorite", "createdAt", "updatedAt"]
+    },
+    "QuranProgress": {
+      "title": "QuranProgress",
+      "description": "Last read/listened position and reading progress",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "lastSurahNumber": { "type": "integer" },
+        "lastSurahNameBn": { "type": "string" },
+        "lastAyahNumber": { "type": "integer" },
+        "lastParaNumber": { "type": "integer" },
+        "lastAudioQariId": { "type": "string" },
+        "totalAyahsRead": { "type": "integer" },
+        "dailyAyahsRead": { "type": "integer" },
+        "dailyGoalAyahs": { "type": "integer" },
+        "lastReadDateKey": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "lastSurahNumber", "lastSurahNameBn", "lastAyahNumber", "lastParaNumber", "lastAudioQariId", "totalAyahsRead", "dailyAyahsRead", "dailyGoalAyahs", "createdAt", "updatedAt"]
+    },
+    "AiConversation": {
+      "title": "AiConversation",
+      "description": "AI Islamic assistant conversation thread",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "lastMessagePreview": { "type": "string" },
+        "messageCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "lastMessagePreview", "messageCount", "createdAt", "updatedAt"]
+    },
+    "AiMessage": {
+      "title": "AiMessage",
+      "description": "Single message in an AI conversation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "role": { "type": "string", "enum": ["USER", "ASSISTANT"] },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "conversationId", "role", "content", "createdAt"]
+    },
+    "PrivateJournal": {
+      "title": "PrivateJournal",
+      "description": "PIN-protected private reflection and gratitude journal",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "gratitudeNote": { "type": "string" },
+        "habitReflection": { "type": "string" },
+        "moodTag": { "type": "string" },
+        "dateKey": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "content", "dateKey", "createdAt", "updatedAt"]
+    },
+    "TasbihLog": {
+      "title": "TasbihLog",
+      "description": "Digital Tasbih dhikr counter log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "dhikrTitle": { "type": "string" },
+        "arabicText": { "type": "string" },
+        "count": { "type": "integer" },
+        "targetCount": { "type": "integer" },
+        "dateKey": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "dhikrTitle", "count", "targetCount", "dateKey", "createdAt", "updatedAt"]
+    },
+    "UserNotification": {
+      "title": "UserNotification",
+      "description": "User notifications and reminder records",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "category": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "body", "category", "read", "createdAt", "updatedAt"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "Anonymous or alias-based motivation and good-deed sharing",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorAlias": { "type": "string" },
+        "category": { "type": "string", "enum": ["MOTIVATION", "GOOD_DEED", "REFLECTION"] },
+        "content": { "type": "string" },
+        "likesCount": { "type": "integer" },
+        "reportedCount": { "type": "integer" },
+        "moderatedHidden": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorAlias", "category", "content", "likesCount", "reportedCount", "moderatedHidden", "createdAt", "updatedAt"]
+    },
+    "CommunityReport": {
+      "title": "CommunityReport",
+      "description": "User moderation report on a community post",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string" },
+        "postId": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["OPEN", "RESOLVED", "DISMISSED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reporterId", "postId", "reason", "status", "createdAt", "updatedAt"]
+    },
+    "QuizResult": {
+      "title": "QuizResult",
+      "description": "User quiz attempt score",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "quizTitle": { "type": "string" },
+        "score": { "type": "integer" },
+        "totalQuestions": { "type": "integer" },
+        "xpEarned": { "type": "integer" },
+        "dateKey": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "quizTitle", "score", "totalQuestions", "xpEarned", "dateKey", "createdAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Authorized admin user record",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "addedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "addedBy", "createdAt"]
+    },
+    "CuratedItem": {
+      "title": "CuratedItem",
+      "description": "Admin-managed curated Islamic hadiths, motivation, mission templates, quizzes, or config",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "reference": { "type": "string" },
+        "category": { "type": "string" },
+        "active": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "body", "category", "active", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": { "$ref": "#/entities/UserProfile" }, "description": "User profile & preferences" },
+    "/users/{userId}/missions/{missionId}": { "schema": { "$ref": "#/entities/UserMission" }, "description": "User Islamic habit missions" },
+    "/users/{userId}/mission_history/{historyId}": { "schema": { "$ref": "#/entities/MissionHistory" }, "description": "Mission completion history" },
+    "/users/{userId}/prayer_logs/{dateKey}": { "schema": { "$ref": "#/entities/PrayerLog" }, "description": "Daily prayer tracker logs" },
+    "/users/{userId}/quran_bookmarks/{bookmarkId}": { "schema": { "$ref": "#/entities/QuranBookmark" }, "description": "Quran bookmarks and favorites" },
+    "/users/{userId}/quran_progress/{docId}": { "schema": { "$ref": "#/entities/QuranProgress" }, "description": "Quran reading and audio progress" },
+    "/users/{userId}/ai_conversations/{conversationId}": { "schema": { "$ref": "#/entities/AiConversation" }, "description": "AI chat threads" },
+    "/users/{userId}/ai_conversations/{conversationId}/messages/{messageId}": { "schema": { "$ref": "#/entities/AiMessage" }, "description": "AI chat messages" },
+    "/users/{userId}/private_journals/{journalId}": { "schema": { "$ref": "#/entities/PrivateJournal" }, "description": "Private personal journals" },
+    "/users/{userId}/tasbih_logs/{logId}": { "schema": { "$ref": "#/entities/TasbihLog" }, "description": "Digital Tasbih dhikr logs" },
+    "/users/{userId}/notifications/{notificationId}": { "schema": { "$ref": "#/entities/UserNotification" }, "description": "User notifications" },
+    "/community_posts/{postId}": { "schema": { "$ref": "#/entities/CommunityPost" }, "description": "Community motivation and good-deed posts" },
+    "/community_reports/{reportId}": { "schema": { "$ref": "#/entities/CommunityReport" }, "description": "Moderation reports" },
+    "/quiz_results/{resultId}": { "schema": { "$ref": "#/entities/QuizResult" }, "description": "Islamic quiz attempt results" },
+    "/admins/{adminUid}": { "schema": { "$ref": "#/entities/AdminRecord" }, "description": "Verified administrator role entries" },
+    "/mission_templates/{templateId}": { "schema": { "$ref": "#/entities/CuratedItem" }, "description": "Admin-managed mission templates" },
+    "/curated_hadiths/{hadithId}": { "schema": { "$ref": "#/entities/CuratedItem" }, "description": "Admin-managed verified hadiths" },
+    "/curated_motivation/{itemId}": { "schema": { "$ref": "#/entities/CuratedItem" }, "description": "Admin-managed Islamic motivation & articles" },
+    "/quizzes/{quizId}": { "schema": { "$ref": "#/entities/CuratedItem" }, "description": "Admin-managed Islamic quizzes" },
+    "/app_config/{configId}": { "schema": { "$ref": "#/entities/CuratedItem" }, "description": "Admin-managed global app, AI, and DNS settings" }
+  }
+}
